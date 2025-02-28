@@ -33,10 +33,24 @@ app.post('/secret', (req, res) => {
         return res.status(405).json({status: 405, message: "Invalid input"})
     }
 
-    const newSecret = new Secret(secret, Number(expireAfterViews), Number(expireAfter));
-    db.query('INSERT INTO secret (hash, secretText, createdAt, expiresAt, remainingViews) VALUES (?, ?, ?, ?, ?)',
-        [newSecret.getHash, newSecret.getSecret, newSecret.getCreatedAt, newSecret.getExpireAfter, newSecret.getExpireAfterViews], (err) => {
-                    if (err) throw err;
-                });
-    return res.status(200).json({status: 200, message: "Successful operation", data: newSecret})
+    const usedHashCodes = [];
+    db.query('SELECT hash FROM secret', (_, result) => {
+        result.forEach(element => {
+            usedHashCodes.push(element.hash);
+        });
+        if (usedHashCodes.length==9000000000){
+            return res.status(400).json({status: 400, message: "No unique hash codes available for new secrets"})
+        }
+        let newSecret = new Secret(secret, Number(expireAfterViews), Number(expireAfter));
+        while (usedHashCodes.includes(newSecret.getHash())){
+            newSecret = new Secret(secret, Number(expireAfterViews), Number(expireAfter));
+        }
+
+        db.query('INSERT INTO secret (hash, secretText, createdAt, expiresAt, remainingViews) VALUES (?, ?, ?, ?, ?)',
+            [newSecret.getHash(), newSecret.getSecret(), newSecret.getCreatedAt(), newSecret.getExpireAfter(), newSecret.getExpireAfterViews()], (err) => {
+                        if (err) throw err;
+                    });
+
+        return res.status(200).json({status: 200, message: "Successful operation", data: newSecret})
+    });
 })

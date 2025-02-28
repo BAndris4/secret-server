@@ -7,24 +7,24 @@ class Secret {
         this.expireAfter.setMinutes(this.createdAt.getMinutes() + expireAfter);
         this.expireAfterViews = Number(expireAfterViews);
     }
-    
-    get getHash(){
+
+    getHash(){
         return this.hash;
     }
 
-    get getSecret(){
+    getSecret(){
         return this.secret;
     }
 
-    get getCreatedAt(){
+    getCreatedAt(){
         return this.createdAt;
     }
 
-    get getExpireAfter(){
+    getExpireAfter(){
         return this.expireAfter;
     }
 
-    get getExpireAfterViews(){
+    getExpireAfterViews(){
         return this.expireAfterViews;
     }
 
