@@ -1,9 +1,16 @@
 const express = require('express');
 const db = require('./database.js');
 const Secret = require('./secret.js');
+const ResponseFormat = require('./responses.js')
 
 const app = express();
 app.use(express.urlencoded({ extended: true }))
+
+function handleResponse(req, res, data) {
+    const acceptHeader = req.get('Accept');
+    const responseFormatter = new ResponseFormat(res);
+    responseFormatter.sendResponse(data, acceptHeader);
+}
 
 app.listen('3000', () => {
     console.log("Server started on port 3000");
@@ -11,16 +18,20 @@ app.listen('3000', () => {
 
 app.get('/secret/:hash', (req, res) => {
     db.query('DELETE FROM secret WHERE expiresAt < SYSDATE()', err=>{if (err) throw err;});
+
     const hash = req.params.hash;
+
     db.query(`SELECT * FROM secret WHERE hash = ?`, [hash], (err, result)=>{
         if (err) throw err;
         if (result.length == 0) {
-            res.status(404).json({status: 404, message: "Secret not found"});
+            const data = {status: 404, message: "Secret not found"};
+            return handleResponse(req, res, data)
         } else {
             const currentSecret = result[0];
             db.query('UPDATE secret SET remainingViews = remainingViews-1 WHERE hash = ?', [currentSecret.hash], err=>{if (err) throw err;});
             db.query('DELETE FROM secret WHERE remainingViews = 0', err=>{if (err) throw err;});
-            return res.status(200).json({status: 200, message: "Successful operation", data: currentSecret});
+            const data = {status: 200, message: "Successful operation", data: currentSecret};
+            return handleResponse(req, res, data)
         }
     })
 })
@@ -30,7 +41,8 @@ app.post('/secret', (req, res) => {
 
     const {secret, expireAfterViews, expireAfter} = req.body;
     if (!secret || !expireAfter || !expireAfterViews ) {
-        return res.status(405).json({status: 405, message: "Invalid input"})
+        const data = {status: 405, message: "Invalid input"}
+        return handleResponse(req, res, data)
     }
 
     const usedHashCodes = [];
@@ -38,8 +50,9 @@ app.post('/secret', (req, res) => {
         result.forEach(element => {
             usedHashCodes.push(element.hash);
         });
-        if (usedHashCodes.length==9000000000){
-            return res.status(400).json({status: 400, message: "No unique hash codes available for new secrets"})
+        if (usedHashCodes.length == 9000000000){
+            data = {status: 400, message: "No unique hash codes available for new secrets"};
+            return handleResponse(req, res, data);
         }
         let newSecret = new Secret(secret, Number(expireAfterViews), Number(expireAfter));
         while (usedHashCodes.includes(newSecret.getHash())){
@@ -47,10 +60,9 @@ app.post('/secret', (req, res) => {
         }
 
         db.query('INSERT INTO secret (hash, secretText, createdAt, expiresAt, remainingViews) VALUES (?, ?, ?, ?, ?)',
-            [newSecret.getHash(), newSecret.getSecret(), newSecret.getCreatedAt(), newSecret.getExpireAfter(), newSecret.getExpireAfterViews()], (err) => {
-                        if (err) throw err;
-                    });
+            [newSecret.getHash(), newSecret.getSecret(), newSecret.getCreatedAt(), newSecret.getExpireAfter(), newSecret.getExpireAfterViews()], (err) => {if (err) throw err;});
 
-        return res.status(200).json({status: 200, message: "Successful operation", data: newSecret})
+        data = {status: 200, message: "Successful operation", data: newSecret}
+        return handleResponse(req, res, data);
     });
 })
