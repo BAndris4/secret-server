@@ -18,7 +18,7 @@ app.get('/secret/:hash', (req, res) => {
             res.status(404).json({status: 404, message: "Secret not found"});
         } else {
             const currentSecret = result[0];
-            db.query('UPDATE secret SET remainingViews = remainingViews-1', err=>{if (err) throw err;});
+            db.query('UPDATE secret SET remainingViews = remainingViews-1 WHERE hash = ?', [currentSecret.hash], err=>{if (err) throw err;});
             db.query('DELETE FROM secret WHERE remainingViews = 0', err=>{if (err) throw err;});
             return res.status(200).json({status: 200, message: "Successful operation", data: currentSecret});
         }
