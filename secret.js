@@ -3,8 +3,12 @@ class Secret {
         this.hash = (Math.trunc(Math.random() * 8999999999) + 1000000000).toString();
         this.secret = secret;
         this.createdAt = new Date();
-        this.expireAfter = new Date();
-        this.expireAfter.setMinutes(this.createdAt.getMinutes() + expireAfter);
+        if (expireAfter==0) {
+            this.expireAfter = null;
+        } else {
+            this.expireAfter = new Date();
+            this.expireAfter.setMinutes(this.createdAt.getMinutes() + expireAfter);
+        }
         this.expireAfterViews = Number(expireAfterViews);
     }
 

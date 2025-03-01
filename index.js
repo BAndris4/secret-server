@@ -30,6 +30,7 @@ app.get('/secret/:hash', (req, res) => {
             return handleResponse(req, res, data)
         } else {
             const currentSecret = result[0];
+            currentSecret.remainingViews-=1;
             db.query('UPDATE secret SET remainingViews = remainingViews-1 WHERE hash = ?', [currentSecret.hash], err=>{if (err) throw err;});
             db.query('DELETE FROM secret WHERE remainingViews = 0', err=>{if (err) throw err;});
             const data = {status: 200, message: "Successful operation", data: currentSecret};
@@ -42,7 +43,7 @@ app.post('/secret', (req, res) => {
     db.query('DELETE FROM secret WHERE expiresAt < SYSDATE()', err=>{if (err) throw err;});
 
     const {secret, expireAfterViews, expireAfter} = req.body;
-    if (!secret || !expireAfter || !expireAfterViews ) {
+    if (!secret || !expireAfter || !expireAfterViews || expireAfterViews <= 0 || expireAfter < 0) {
         const data = {status: 405, message: "Invalid input"}
         return handleResponse(req, res, data)
     }
