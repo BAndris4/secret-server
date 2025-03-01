@@ -1,10 +1,12 @@
+const cors = require('cors');
 const express = require('express');
 const db = require('./database.js');
 const Secret = require('./secret.js');
 const ResponseFormat = require('./responses.js')
 
 const app = express();
-app.use(express.urlencoded({ extended: true }))
+app.use(express.urlencoded({ extended: true }));
+app.use(cors());
 
 function handleResponse(req, res, data) {
     const acceptHeader = req.get('Accept');
