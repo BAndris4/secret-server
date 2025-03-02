@@ -14,10 +14,6 @@ function handleResponse(req, res, data) {
     responseFormatter.sendResponse(data, acceptHeader);
 }
 
-app.listen('3000', () => {
-    console.log("Server started on port 3000");
-})
-
 app.get('/secret/:hash', (req, res) => {
     db.query('DELETE FROM secret WHERE expiresAt < SYSDATE()', err=>{if (err) throw err;});
 
@@ -68,4 +64,14 @@ app.post('/secret', (req, res) => {
         data = {status: 200, message: "Successful operation", data: newSecret}
         return handleResponse(req, res, data);
     });
+})
+
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ status: 500, message: "Internal Server Error" });
+});
+
+
+app.listen('3000', () => {
+    console.log("Server started on port 3000");
 })
