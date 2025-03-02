@@ -19,6 +19,8 @@ class ResponseFormat {
             this.sendJson(data);
         } else if (accept.includes('application/xml')) {
             this.sendXml(data);
+        } else {
+            this.res.status(406).json({ status: 406, message: "Not Acceptable: Supported formats are application/json and application/xml" });
         }
     }
 }
